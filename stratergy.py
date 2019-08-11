@@ -1,4 +1,4 @@
-from dataHandler import DataHandler
+from data import DataHandler
 
 
 class Stratergy:

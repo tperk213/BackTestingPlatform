@@ -1,4 +1,4 @@
-from dataHandler import DataHandler
+from data import DataHandler
 from portfolio import Portfolio
 from stratergy import Stratergy
 
