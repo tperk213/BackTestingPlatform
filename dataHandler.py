@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 
 class DataHandler:
@@ -10,7 +11,8 @@ class DataHandler:
 
         # data is stored as an iterator of form
         # (index, row)
-        # row is a dict i belive with keys of column names
+        # row_keys:
+        #  "open", "high", "low", "close", "volume", "adj_close"
         # bar will be of form
         # (index, row)
         self.data = pd.read_csv(
@@ -55,6 +57,16 @@ class DataHandler:
 
     def get_latest_bar(self):
         return self.latest_data[-1]
+
+    def get_latest_bars(self, N):
+
+        return self.latest_data[-N:]
+
+    def get_bar_values(self, key, N):
+        bars = []
+        if N <= len(self.latest_data):
+            bars = np.array([getattr(b[1], key) for b in self.get_latest_bars(N)])
+        return bars
 
 
 if __name__ == "__main__":
