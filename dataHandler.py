@@ -68,6 +68,9 @@ class DataHandler:
             bars = np.array([getattr(b[1], key) for b in self.get_latest_bars(N)])
         return bars
 
+    def get_latest_bar_value(self, key):
+        return getattr(self.get_latest_bar()[1], key)
+
 
 if __name__ == "__main__":
     dh = DataHandler("2015-01-01")
