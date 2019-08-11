@@ -25,7 +25,7 @@ class SignalEvent(Event):
     """
 
     @params_to_attr
-    def __init__(self, symbol, datetime, signal_type):
+    def __init__(self, symbol, datetime, signal_type, strength):
         """
             Params:
                 datetime: 
@@ -34,6 +34,8 @@ class SignalEvent(Event):
                     "LONG" or "SHORT"
                 symbol:
                     "GOOG" ticker
+                strength:
+                    scale adjustment for buy_sell quantity, useful in pairs strats
         """
 
         self.type = "SIGNAL"

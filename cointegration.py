@@ -55,11 +55,13 @@ def plot_residuals(df):
 
 
 if __name__ == "__main__":
-    start = datetime.datetime(2012, 1, 1)
-    end = datetime.datetime(2013, 1, 1)
+    start = datetime.datetime(2010, 1, 1)
+    end = datetime.datetime(2015, 1, 1)
 
     arex = web.DataReader("AREX", "yahoo", start, end)
+    arex.to_csv()
     wll = web.DataReader("WLL", "yahoo", start, end)
+    wll.to_csv()
     df = pd.DataFrame(index=arex.index)
     df["AREX"] = arex["Adj Close"]
     df["WLL"] = wll["Adj Close"]

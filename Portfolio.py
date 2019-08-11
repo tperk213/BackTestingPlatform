@@ -142,10 +142,12 @@ class Portfolio:
                 datetime: 
                     timestamp of when signal was generated
                 signal_type:
-                    "BUY" or "SELL"
+                    "BUY", "SELL" or "EXIT"
                 symbol:
                     representation of company eg
                     "APPL"
+                strength:
+                    adjustment factor
             return order dict of
                 quantity
                 signal

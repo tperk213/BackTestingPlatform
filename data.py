@@ -124,7 +124,7 @@ class DataHandler:
         return self.latest_symbol_data[symbol][-N:]
 
     def get_bar_values(self, symbol, key, N):
-        bars = []
+        bars = None
         if N <= len(self.latest_symbol_data[symbol]):
             bars = np.array(
                 [getattr(b[1], key) for b in self.get_latest_bars(symbol, N)]

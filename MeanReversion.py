@@ -7,18 +7,6 @@ from numpy.random import randn
 import matplotlib.pyplot as plt
 from pandas.plotting import register_matplotlib_converters
 
-register_matplotlib_converters()
-# import data as df
-
-amzn = web.DataReader("AMZN", "yahoo", datetime(2000, 1, 1), datetime(2015, 1, 1))
-
-# Dicky fuller test
-fuller = ts.adfuller(amzn["Adj Close"], 1)
-
-print(fuller)
-
-# Hurst exponent
-
 
 def hurst(ts):
     lags = range(2, 100)
@@ -60,8 +48,22 @@ def hurst(ts):
 # print("Hurst(MR): {}".format(hurst(mr)))
 # print("Hurst(Tr): {}".format(hurst(tr)))
 
-fig = plt.figure()
-plt.plot(amzn["Adj Close"])
-plt.title(label="Amazon Adj Close")
-print("Hurst(amzn) : {}".format(hurst(amzn["Adj Close"])))
-plt.show()
+if __name__ == "__main__":
+
+    register_matplotlib_converters()
+    # import data as df
+
+    amzn = web.DataReader("AMZN", "yahoo", datetime(2000, 1, 1), datetime(2015, 1, 1))
+
+    # Dicky fuller test
+    fuller = ts.adfuller(amzn["Adj Close"], 1)
+
+    print(fuller)
+
+    # Hurst exponent
+
+    fig = plt.figure()
+    plt.plot(amzn["Adj Close"])
+    plt.title(label="Amazon Adj Close")
+    print("Hurst(amzn) : {}".format(hurst(amzn["Adj Close"])))
+    plt.show()
