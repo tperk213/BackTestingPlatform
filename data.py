@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from event import MarketEvent
 
 
 class DataHandler:
@@ -7,7 +8,7 @@ class DataHandler:
         Holds the data frame of the current and future bar info
     """
 
-    def __init__(self, start_date=None, end_date=None):
+    def __init__(self, events, start_date=None, end_date=None):
 
         # data is stored as an iterator of form
         # (index, row)
@@ -15,6 +16,7 @@ class DataHandler:
         #  "open", "high", "low", "close", "volume", "adj_close"
         # bar will be of form
         # (index, row)
+        self.events = events
         self.data = pd.read_csv(
             "E:\\Code\\EventDrivenTrading\\stock_dfs\\AAPL.csv",
             header=0,
@@ -54,6 +56,7 @@ class DataHandler:
         else:
             if bar is not None:
                 self.latest_data.append(bar)
+                self.events.put(MarketEvent())
 
     def get_latest_bar(self):
         return self.latest_data[-1]
@@ -71,19 +74,22 @@ class DataHandler:
     def get_latest_bar_value(self, key):
         return getattr(self.get_latest_bar()[1], key)
 
+    def get_latest_bar_datetime(self):
+        return self.latest_data[-1][0]
 
-if __name__ == "__main__":
-    dh = DataHandler("2015-01-01")
 
-    # print(dh.data)
-    count = 0
+# if __name__ == "__main__":
+#     dh = DataHandler("2015-01-01")
 
-    while True:
-        count += 1
-        print(count)
-        if dh.finished == False:
-            dh.update_bars()
-        else:
-            print(dh.latest_data)
-            break
+#     # print(dh.data)
+#     count = 0
+
+#     while True:
+#         count += 1
+#         print(count)
+#         if dh.finished == False:
+#             dh.update_bars()
+#         else:
+#             print(dh.latest_data)
+#             break
 

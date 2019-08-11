@@ -2,6 +2,7 @@ from data import DataHandler
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from event import OrderEvent
 
 
 class Portfolio:
@@ -34,8 +35,9 @@ class Portfolio:
             }
     """
 
-    def __init__(self, dataHandler, starting_capital=100000):
+    def __init__(self, dataHandler, events, starting_capital=100000):
 
+        self.events = events
         self.dataHandler = dataHandler
 
         # Holdings init
@@ -87,9 +89,13 @@ class Portfolio:
 
             self.holdings.append(temp_holdings)
 
-    def handle_signal(self, signal):
+    def handle_signal(self, event):
         """
-            signal is string "BUY" or "SELL"
+            event is a signal event
+                datetime: 
+                    timestamp of when signal was generated
+                signal_type:
+                    "BUY" or "SELL"
             return order dict of
                 quantity
                 signal
@@ -97,45 +103,38 @@ class Portfolio:
         mkt_quantity = 100
         cur_quantity = self.current_positions["stock"]
 
-        if signal == "BUY":
-            order = {"quantity": mkt_quantity, "signal": "BUY"}
-        elif signal == "SELL":
-            order = {"quantity": cur_quantity, "signal": "SELL"}
-        else:
-            order = {"quantity": 0, "signal": "None"}
-        return order
+        if event.signal_type == "BUY":
+            order = OrderEvent(quantity=mkt_quantity, direction="BUY")
+            self.events.put(order)
+        elif event.signal_type == "SELL":
+            order = OrderEvent(quantity=cur_quantity, direction="SELL")
+            self.events.put(order)
 
-    def update_positions_from_fill(self, fill_order):
-        fill_direction = 0
-        if fill_order["signal"] == "BUY":
-            fill_direction = 1
-        if fill_order["signal"] == "SELL":
-            fill_direction = -1
+    def update_positions_from_fill(self, fill_event):
+        directions = {"BUY": 1, "SELL": -1}
+        fill_direction = directions[fill_event.direction]
 
-        self.current_positions["stock"] += fill_direction * fill_order["quantity"]
+        self.current_positions["stock"] += fill_direction * fill_event.quantity
 
-    def update_holdings_from_fill(self, fill_order):
-        fill_direction = 0
-        if fill_order["signal"] == "BUY":
-            fill_direction = 1
-        if fill_order["signal"] == "SELL":
-            fill_direction = -1
+    def update_holdings_from_fill(self, fill_event):
+
+        directions = {"BUY": 1, "SELL": -1}
+        fill_direction = directions[fill_event.direction]
 
         fill_cost = self.dataHandler.get_latest_bar_value("adj_close")
-        cost = fill_direction * fill_cost * fill_order["quantity"]
+        cost = fill_direction * fill_cost * fill_event.quantity
 
         self.current_holdings["stock_value"] = self.current_positions[
             "stock"
         ] * self.dataHandler.get_latest_bar_value("adj_close")
         self.current_holdings["cash"] -= cost
 
-    def process_fill(self, fill_order):
+    def process_fill(self, event):
         """
             updates the portfolio based on the fill order that comes from execution
         """
-        if fill_order["signal"] != "None":
-            self.update_positions_from_fill(fill_order)
-            self.update_holdings_from_fill(fill_order)
+        self.update_positions_from_fill(event)
+        self.update_holdings_from_fill(event)
 
     # Stats section
 
@@ -256,22 +255,4 @@ class Portfolio:
         )
         plt.tight_layout()
         plt.show()
-
-
-if __name__ == "__main__":
-
-    historicData = DataHandler()
-    portfolio = Portfolio(historicData)
-
-    count = 0
-    while True:
-        count += 1
-        # Get market event/data
-        if historicData.finished == False:
-            historicData.update_bars()
-        else:
-            break
-
-        # Handle processing of new market data
-        portfolio.update()
 
