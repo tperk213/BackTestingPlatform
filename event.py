@@ -25,14 +25,17 @@ class SignalEvent(Event):
     """
 
     @params_to_attr
-    def __init__(self, datetime, signal_type):
+    def __init__(self, symbol, datetime, signal_type):
         """
             Params:
                 datetime: 
                     timestamp of when signal was generated
                 signal_type:
                     "LONG" or "SHORT"
+                symbol:
+                    "GOOG" ticker
         """
+
         self.type = "SIGNAL"
 
 
@@ -45,7 +48,7 @@ class OrderEvent(Event):
     """
 
     @params_to_attr
-    def __init__(self, quantity, direction):
+    def __init__(self, symbol, quantity, direction):
         """
             Params:
                 order_type:
@@ -54,6 +57,8 @@ class OrderEvent(Event):
                     integer for quantity desired
                 direction:
                     "BUY" or "SELL"
+                symbol:
+                    "APPL"
         """
         self.type = "ORDER"
 
@@ -66,7 +71,7 @@ class FillEvent(Event):
     """
 
     @params_to_attr
-    def __init__(self, quantity, direction, fill_cost, commission=None):
+    def __init__(self, symbol, quantity, direction, fill_cost, commission=None):
 
         self.type = "FILL"
 

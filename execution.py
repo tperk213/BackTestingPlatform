@@ -16,7 +16,10 @@ class ExecutionHandler:
             for testing there is no slipage or fees to start
         """
         fill = FillEvent(
-            quantity=event.quantity, direction=event.direction, fill_cost=None
+            symbol=event.symbol,
+            quantity=event.quantity,
+            direction=event.direction,
+            fill_cost=None,
         )
         self.events.put(fill)
 

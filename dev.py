@@ -7,10 +7,15 @@ import queue
 
 if __name__ == "__main__":
 
+    csv_dir = "E:\\Code\\EventDrivenTrading\\stock_dfs"
+    symbol_list = ["AAPL", "ABBV"]
     events = queue.Queue()
-    historicData = DataHandler(events)
+    historicData = DataHandler(events, csv_dir, symbol_list)
     portfolio = Portfolio(historicData, events)
-    stratergy = Stratergy(historicData, events)
+    stratergys = [
+        Stratergy("AAPL", historicData, events),
+        Stratergy("ABBV", historicData, events),
+    ]
     simpleExecution = ExecutionHandler(events)
 
     count = 0
@@ -36,7 +41,8 @@ if __name__ == "__main__":
                     # switch on event type
                     if event.type == "MARKET":
                         # Handle processing of new market data
-                        stratergy.calculate_signal()
+                        for s in stratergys:
+                            s.calculate_signal()
                         portfolio.update()
                     elif event.type == "SIGNAL":
                         portfolio.handle_signal(event)

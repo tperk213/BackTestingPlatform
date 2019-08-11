@@ -37,58 +37,105 @@ class Portfolio:
 
     def __init__(self, dataHandler, events, starting_capital=100000):
 
+        """
+         Data
+            holdings is of form
+                [
+                    {
+                        "datetime": dataHandler.start_date,
+                        "cash": starting_capital,
+                        "stock_value": 0,
+                        "total": starting_capital,
+                        "symbol_1": "int of stock value"
+                        ....
+                        "symbol_last": "int of stock value  
+                    }
+                ]
+            
+            positions is of form
+                [
+                    {
+                        "datetime": dataHandler.start_date, 
+                        "symbol_1": "int number of stocks" starts at 0
+                        ....
+                        "symbol_last": "int number of stocks" starts at 0
+                    }
+                ]
+        """
         self.events = events
         self.dataHandler = dataHandler
-
+        self.symbol_list = dataHandler.symbol_list
+        self.starting_capital = starting_capital
         # Holdings init
-        self.holdings = [
-            {
-                "datetime": dataHandler.start_date,
-                "cash": starting_capital,
-                "stock_value": 0,
-                "total": starting_capital,
-            }
-        ]
-        self.current_holdings = {
-            "datetime": dataHandler.start_date,
-            "cash": starting_capital,
-            "stock_value": 0,
-            "total": starting_capital,
-        }
+        self.holdings = self.construct_holdings()
+
+        self.current_holdings = self.construct_current_holdings()
 
         # positions init
-        self.positions = [{"datetime": dataHandler.start_date, "stock": 0}]
+        self.positions = self.construct_positions()
 
-        self.current_positions = {"stock": 0}
+        self.current_positions = self.construct_current_positions()
+
+    def construct_positions(self):
+        d = dict((k, v) for k, v in [(s, 0) for s in self.symbol_list])
+        d["datetime"] = self.dataHandler.start_date
+        return [d]
+
+    def construct_holdings(self):
+        d = dict((k, v) for k, v in [(s, 0) for s in self.symbol_list])
+        d["datetime"] = self.dataHandler.start_date
+        d["cash"] = self.starting_capital
+        d["total"] = self.starting_capital
+        return [d]
+
+    def construct_current_positions(self):
+        d = dict((k, v) for k, v in [(s, 0) for s in self.symbol_list])
+        d["datetime"] = self.dataHandler.start_date
+        return d
+
+    def construct_current_holdings(self):
+        d = dict((k, v) for k, v in [(s, 0) for s in self.symbol_list])
+        d["datetime"] = self.dataHandler.start_date
+        d["cash"] = self.starting_capital
+        d["total"] = self.starting_capital
+        return d
 
     def update(self):
-        timestamp = self.dataHandler.get_latest_bar()[0]
+        timestamp = self.dataHandler.get_latest_bar(self.symbol_list[0])[0]
 
         # avoids duplicating the first entry
         if timestamp != self.dataHandler.start_date:
 
             # update positions
-            self.positions.append(
-                {"datetime": timestamp, "stock": self.current_positions["stock"]}
-            )
+            temp_positions = dict((k, v) for k, v in [(s, 0) for s in self.symbol_list])
+            temp_positions["datetime"] = timestamp
+
+            for s in self.symbol_list:
+                temp_positions[s] = self.current_positions[s]
+
+            self.positions.append(temp_positions)
 
             # update holdings
-            temp_holdings = {
-                "datetime": timestamp,
-                "cash": self.current_holdings["cash"],
-                "stock_value": 0,
-                "total": self.current_holdings["cash"],
-            }
+            temp_holdings = dict((k, v) for k, v in [(s, 0) for s in self.symbol_list])
+            temp_holdings.update(
+                {
+                    "datetime": timestamp,
+                    "cash": self.current_holdings["cash"],
+                    "total": self.current_holdings["cash"],
+                }
+            )
 
-            temp_holdings["stock_value"] = self.current_positions[
-                "stock"
-            ] * self.dataHandler.get_latest_bar_value("adj_close")
+            for s in self.symbol_list:
+                temp_holdings[s] = self.current_positions[
+                    s
+                ] * self.dataHandler.get_latest_bar_value(s, "adj_close")
+                temp_holdings["total"] += temp_holdings[s]
 
-            temp_holdings["total"] += temp_holdings["stock_value"]
             self.current_holdings["total"] = temp_holdings["total"]
 
             self.holdings.append(temp_holdings)
 
+    ########################################################################################################
     def handle_signal(self, event):
         """
             event is a signal event
@@ -96,37 +143,48 @@ class Portfolio:
                     timestamp of when signal was generated
                 signal_type:
                     "BUY" or "SELL"
+                symbol:
+                    representation of company eg
+                    "APPL"
             return order dict of
                 quantity
                 signal
         """
         mkt_quantity = 100
-        cur_quantity = self.current_positions["stock"]
+        cur_quantity = self.current_positions[event.symbol]
 
         if event.signal_type == "BUY":
-            order = OrderEvent(quantity=mkt_quantity, direction="BUY")
+            order = OrderEvent(
+                symbol=event.symbol, quantity=mkt_quantity, direction="BUY"
+            )
             self.events.put(order)
         elif event.signal_type == "SELL":
-            order = OrderEvent(quantity=cur_quantity, direction="SELL")
+            order = OrderEvent(
+                symbol=event.symbol, quantity=cur_quantity, direction="SELL"
+            )
             self.events.put(order)
 
     def update_positions_from_fill(self, fill_event):
         directions = {"BUY": 1, "SELL": -1}
         fill_direction = directions[fill_event.direction]
 
-        self.current_positions["stock"] += fill_direction * fill_event.quantity
+        self.current_positions[fill_event.symbol] += (
+            fill_direction * fill_event.quantity
+        )
 
     def update_holdings_from_fill(self, fill_event):
 
         directions = {"BUY": 1, "SELL": -1}
         fill_direction = directions[fill_event.direction]
 
-        fill_cost = self.dataHandler.get_latest_bar_value("adj_close")
+        fill_cost = self.dataHandler.get_latest_bar_value(
+            fill_event.symbol, "adj_close"
+        )
         cost = fill_direction * fill_cost * fill_event.quantity
 
-        self.current_holdings["stock_value"] = self.current_positions[
-            "stock"
-        ] * self.dataHandler.get_latest_bar_value("adj_close")
+        self.current_holdings[fill_event.symbol] = self.current_positions[
+            fill_event.symbol
+        ] * self.dataHandler.get_latest_bar_value(fill_event.symbol, "adj_close")
         self.current_holdings["cash"] -= cost
 
     def process_fill(self, event):
